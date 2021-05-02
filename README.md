@@ -10,7 +10,7 @@ I wanted to practice accessing and mining social media text data using [`tidyver
 
 Outputs are both an `*Rmd` file and a formatted `HTML` file. At the time I was really into css-ing HTML output from R-markdown.
 
-⭐ If you would like to have a look at the data, please reach out. 🤝
+:star: If you would like to have a look at the data, please reach out. :handshake:
 
 ## What are my references?
 
@@ -24,4 +24,4 @@ Paulina Villegas [article](https://www.nytimes.com/es/2020/03/10/espanol/mexico-
 
 The [text](https://www.cndh.org.mx/noticia/paro-nacional-de-mujeres-contra-la-violencia-la-mujer-y-los-feminicidios#:~:text=El%2006%20de%20marzo%20de,poblaci%C3%B3n%20femenina%20en%20las%20esferas) from María de la Luz Estrada, Coordinator of the National Citizen Observatory of Feminicides, and references therein.
 
-**Let's get started** 🦄 **!**
+**Let's get started** :unicorn: **!**
