@@ -1,0 +1,699 @@
+---
+title: "IF WOMEN STOP, THE WORLD STOPS"
+output:
+  html_document:
+    df_print: paged
+    self_contained: yes
+    smart: true
+    md_extensions: -escaped_line_breaks+blank_before_header+blank_before_blockquote
+    toc: true
+    fig_caption: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+---
+
+```{css, include=FALSE}
+
+/* Link to source all the Barlow fonts  */
+<link href="https://fonts.googleapis.com/css?family=Barlow:400,400i,500,500i,700,700i,800,800i&display=swap" rel="stylesheet">
+
+<style>
+
+/* Title of report*/
+h1{
+  font-family: 'Barlow Extra-Bold', sans-serif;
+  font-weight: bold;
+  font-size: 50px;
+  color: #6515AC;
+  line-height: 1em;
+  text-align: center;
+}
+
+h2{
+  font-family: 'Barlow Extra-Bold', sans-serif;
+  font-weight: bold;
+  font-size: 20px;
+  text-align: left;
+}
+
+h3{
+  font-family: 'Barlow Extra-Bold', sans-serif;
+  font-weight: bold;
+  font-size: 18px;
+  text-align: left;
+}
+    
+body {
+  font-family: 'Barlow Regular', sans-serif;
+  font-size: 16px;
+  line-height: 2em;
+  text-align: justify;
+}
+
+p.caption {
+  font-size: 16px;
+  font-family: 'Barlow Bold';
+  color: #525252;
+  margin-right: 10%;
+  margin-left: 10%;
+  margin-bottom: 5%;
+  text-align: justify;
+  line-height: 1.5em;
+}
+
+blockquote { 
+  display: block;
+  background: #efe7f6;
+  border-left: 0px solid #efe7f6;
+  margin-top: 1em;
+  margin-bottom: 1em;
+  margin-left: 30px;
+  margin-right: 30px;
+}
+
+blockquote p {
+  font-size: 16px;
+  font-family: 'ArcherPro Semibold';
+  color: #454545;
+  text-align: justify;
+  line-height: 1.5em;
+}
+
+footnotes {
+  font-size: 9px;
+  font-family: 'ArcherPro Semibold';
+  text-align: justify;
+  line-height: 1.15em;
+}
+
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+    background-color: #00aba9;
+    font-color: #000000;
+}
+
+</style>
+  
+```
+
+```{r set_up, echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+
+# loading libraries
+library(rtweet)
+library(twitterwidget)
+library(qdapRegex)
+library(tidytext)
+library(tidyverse)
+library(stringr)
+library(stringi)
+library(lubridate)
+library(plotly)
+library(tm)
+library(leaflet)
+library(sentimentr)
+library(DT)
+library(syuzhet)
+library(visNetwork)
+theme_set(theme_bw())
+
+```
+
+```{r Load_data, echo=FALSE, include=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+
+# Load data
+data<-read_twitter_csv("./Data/Processed Data/Full_merged_dedup_dataset_13032020.csv") 
+#add timeline with the original tweet
+#temp<-read_twitter_csv("./Data/Raw Data/Scraped14032020_brujasdelmar_timeline_ori.csv") 
+
+# merge data
+#data<-rbind(data,temp)
+#rm(temp)
+
+
+# Check for presence of replies
+#data %>% select(reply_to_screen_name) %>% unique()
+
+# Check for presence of quotes
+#data %>% select(is_quote) %>% table()
+
+# Check for presence of retweets
+#data %>% select(is_retweet) %>% table()
+
+# Check for created_at for nas
+#data %>% select(created_at) %>% filter(is.na(.))
+
+
+## Data Processing
+
+# Make sure date format is correct
+data$created_at<-ymd_hms(data$created_at, tz = "UTC")
+#glimpse(data$created_at)
+
+# Create a day-month column/feature to filter by day
+data$date_ymd<-as_date(data$created_at)
+#glimpse(data$date_ymd)
+
+## subset data to only tweets from March 9th: during the national strike
+data_9M<- data %>%
+          filter(date_ymd == "2020-03-09")
+          #42,126 tweets
+
+```
+
+<br>
+
+## Introduction
+
+On March 9th, 2020, a day after International Women's Day, women all over Mexico stopped. This was how they protested the unrelenting wave of gender-based violence in Mexico. They showed that if women stop, the world stops.
+
+This is a text mining project of social media activity around the *"Paro Nacional"* (National Strike). 
+
+Twitter was scrapped in multiple sessions, looking for tweets with one or more of the #UnDiaSinMujeres #UnDiaSinNosotras #ParoNacional #9M hash-tags. These hash-tags represented the movement started by Mexican women to strike on March 9th, 2020. The sample data includes 108,522 original tweets, scraped in multiple sessions between February 12th and March 14th, 2020. Quotes, re-tweets, and replies were excluded.
+
+<br>
+
+## Timeline
+
+According to a [report](https://www.animalpolitico.com/elsabueso/origen-paro-nacional-9-marzo-sin-mujeres/) from Mexican news media, the initiative for a national strike on March 9th took off with a tweet from a feminist collective based in the state of Veracruz:
+
+<center>
+```{r tweet_embedding_1, echo=FALSE}
+
+# Embedd tweet from las brujasdelmar
+twitterwidget('1229913597201047554')
+
+```
+</center>
+<br>
+<br>
+
+The tweet was posted on the afternoon of Tuesday, February 18th (Mexico time). Three days after a seven-year-old girl, Fatima Aldrighett, was found dead after being abducted from her school on February 11th. What happened to Fatima came only three days after the murder of Ingrid Escamilla. Both cases received large media attention in Mexico and [abroad](https://www.nytimes.com/2020/03/06/opinion/international-world/mexico-femicides-amlo.html). 
+
+This time series plot shows the increase of original tweets with hash tags #UnDiaSinNosotras, #UnDiaSinMujeres, #paronacional or #9M after February 18th, 2020.
+
+<br>
+<center>
+
+```{r time_series, echo=FALSE,warning=FALSE, message=FALSE, include=T, fig.pos='center', fig.fullwidth = TRUE, out.extra='style="padding:5px;"', fig.cap="*Number of original tweets containing one or more of the #UnDiaSinMujeres #UnDiaSinNosotras #ParoNacional #9M hash-tags.* Ingrid Escamilla was found on February 9th. Fatima Aldrighett was found on February 15th. On February 18th, las brujas del mar, the twitter account of a feminist collective from Veracruz, call for a natiional stike on March 9th.", fig.retina=1}
+
+# Set up parallel processing
+doParallel::registerDoParallel()
+
+## group and count freq by date
+day_freq<-data %>%
+          group_by(date_ymd) %>%
+          count() %>% as.data.frame()
+
+## Create an annotated time series plot
+# 9 de febrero Ingrid Escamilla
+# 11 de febrero Fatima Aldrighett desaparece #JusticiaParaFatima
+# 15 de febrero encontraron a Fatima
+# 18 de febrero #UnDiaSinMujeres appears
+
+# create annotations
+a <- list(y = 0,
+  x = as.Date(c("2020-02-09",
+                #"2020-02-11",
+                "2020-02-15",
+                "2020-02-18",
+                "2020-03-09")),
+  text = c("<i>Ingrid\nEscamilla</i>", 
+           #"Fátima Aldrighett\ndesaparece",
+           "<i>Fátima\nAldrighett</i>",
+           "<i>'Si paramos nosotras,\npara el mundo'</i>",
+           "<i>Paro Nacional</i>"),
+  font = list(#color = '#6515AC',
+              family = 'sans serif', size = 15),
+  xref = "x", yref = "y", 
+  showarrow = TRUE, arrowhead = 6, arrowsize = .5,
+  ax = c(5,5,5,0), ay = c(-140, -210, -280, -390)
+)
+
+
+# create plot
+plot_ly(day_freq,
+        y=~n, 
+        x=~date_ymd, 
+        type = "bar",
+        marker = list(color = '#6515AC'),
+        hoverinfo = "text",
+        text = ~paste(format(n,big.mark = ","), " tweets ", "on ",month(date_ymd, label=T,abbr = F)," ", day(date_ymd), sep="")) %>%
+  layout(title = list(text = "<b>Social media activity</b>", y = 1, x = 0),
+         xaxis = list(title = "", tickfont=list(size = 13)),
+         yaxis = list(title = "Number of original tweets", gridcolor ='white'),
+         annotations = a)
+
+```
+
+</center>
+<br>
+
+
+## National and international support
+
+This initiative of Mexican women received social media support from other expatriates and women in other countries. In fact, women mobilized in many other countries in Latin-America and [around the world](https://www.bbc.com/mundo/noticias-51754382) between March 8th and 9th, 2020.
+
+In Argentina, the social media activity reflects the large mobilization of women in protest demanding the right to choose, justice, and denouncing the traffic of women. The [protest](https://www.pagina12.com.ar/251821-paro-y-marcha-por-los-reclamos-feministas) took place on March 9th, 2020. 
+
+<br>
+<center>
+
+```{r tweet_location_map, echo=FALSE, warning=FALSE, message=FALSE, fig.fullwidth = TRUE, include=T, fig.pos='center', out.extra='style="padding:5px;"', fig.cap="*Location of original tweets containing the #UnDiaSinMujeres #UnDiaSinNosotras #ParoNacional #9M hash-tags. Only a small fraction of the dataset contained geolocation information.* Most tweets come from Mexico, in particular around Mexico City, the country's capital. Social media activity in Latin-America reflects similar protest and mobilisations, for example in Chile and Argentina. Tweets from Europe seem to be from expatriates.", fig.retina=1}
+
+# cleanup & and filter to just the time period around the flood
+location_tweets <- data %>%
+  mutate(coords.coordinates = gsub(" ", ", ", coords_coords)) %>%
+  separate(coords.coordinates, c("long", "lat"), sep = ", ") %>%
+  mutate_at(c("lat", "long"), as.numeric) %>% 
+  select(lat,long,text) %>% 
+  na.omit()
+
+leaflet(location_tweets) %>%
+  addTiles() %>%
+  addProviderTiles(providers$Stamen.TonerLite) %>%
+  addCircleMarkers(lng = ~long, lat = ~lat, popup = ~text, color = "#6515AC",
+                   radius = 5, stroke = FALSE, fillOpacity = 0.5)
+
+```
+
+</center>
+<br>
+
+## Mexico, March 9th, 2020: *"Paro Nacional"*
+
+Women called: *"El 9 ninguna se mueve",* on the 9th, we stop. They did not go to work, they did not travel, they did not buy anything, some did not even used social media. But they were not silent.
+
+News media outlets, organizations, men, politicians, journalists, supported the movement on social media. From the data sample, 42,126 original tweets had a time stamp on March 9th. They came mainly from Mexico and Argentina.
+
+```{r country_activity_9M,  echo=FALSE, warning=FALSE, message=FALSE, include=F}
+
+countries_9M <- data_9M %>% 
+                mutate(hour= hour(created_at)) %>% 
+                select(hour,country) %>% 
+                group_by(country) %>% 
+                count()
+
+names(countries_9M)<-paste(c("Country","Number of original tweets"))
+
+library(DT) 
+library(htmltools)
+
+# Style header
+header.style.topic <- "th { font-family: 'ArcherPro Semibold'; font-weight: bold; fontSize = 17px; color: white; background-color: #6515AC;}"
+
+header.names.topic <- c("Country","Number of original tweets") 
+
+# The container parameter allows us to design the header of the table
+# using CSS
+my.container.topic <-  withTags(table(
+    style(type = "text/css", header.style.topic),
+    thead(
+        tr(
+                lapply(header.names.topic, th, style = "text-align: center; border-right-width: 1px; border-right-style: solid; border-right-color: white; border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: white")
+        )
+    )
+))
+
+# Create an interactive table
+datatable(subset(countries_9M, !is.na(Country)), 
+          options = list(pageLength = 15), container=my.container.topic, rownames = FALSE,escape = FALSE,
+          caption = htmltools::tags$caption("Original tweets with one or more of the UnDiaSinMujeres #UnDiaSinNosotras #ParoNacional #9M hash-tags hash-tags created and published on March 9th per country.",
+          style='caption-side: top; 
+          font-size: 110%;
+          font-style: bold;
+          color: #525252;
+          margin-top: 5%;
+          margin-bottom: 5%;
+          margin-left: 2%;
+          margin-right: 2%;
+          text-align: justify;')
+          )%>% 
+  formatStyle('Country',  backgroundColor ='#00aba9', fontSize = "17px", fontWeight = "bold",color = "white") %>%
+  formatStyle('Number of original tweets',   backgroundColor = "#f2aac8",fontSize = "17px", fontWeight = "bold") #%>%
+
+
+
+```
+
+```{r 9M,  echo=FALSE, warning=FALSE, message=FALSE, fig.fullwidth = TRUE, include=F, fig.pos='center', out.extra='style="padding:5px;"', fig.cap="*Time series of original tweets on March 9th: the day of the national strike.*", fig.retina=1}
+
+## get frequencies
+hourfreq_9M<-data_9M %>%
+          mutate(hour= hour(created_at))%>%
+          group_by(hour) %>%
+          count() %>% as.data.frame()
+
+# create plot
+plot_ly(hourfreq_9M,
+        y=~n, 
+        x=~hour, 
+        type = "bar",
+        marker = list(color = '#6515AC'),
+        hoverinfo = "text",
+        text = ~paste(format(n,big.mark = ","), " tweets ", "at ", hour,"h Mexico time", sep="")) %>%
+  layout(title = list(text = "<b>Social media activity on March 9th</b>", y = 1, x = 0),
+         xaxis = list(title = "Hour", tickfont=list(size = 12)),
+         yaxis = list(title = "Number of original tweets", gridcolor ='white'))
+
+
+```
+
+<br>
+
+### Word and bi-gram frequencies
+
+A word frequency analysis shows the subjects (nouns) or actions (verbs) tweeted on March 9th, 2020. Preparing the data for this analysis included lower casing all words, removing tildes to avoid duplicates from inconsistent spelling, excluding [stop words](https://en.wikipedia.org/wiki/Stop_words), URLs and emoticons. 
+
+The most common subject in the original tweets was *"niunamas"*, not-[loosing]-one-more. This hash-tag reflects the same sentiment as *"niunamenos"*, not-one-less. There are also mentions to the mobilization on March 8th, 2020, International Women's Day: *"8M"*, *"8M2020"*, and *"March8M"*.
+
+<br>
+<center>
+
+```{r word_freq,  echo=FALSE, warning=FALSE, message=FALSE, fig.fullwidth = TRUE, include=T, fig.pos='center', out.extra='style="padding:5px;"', fig.cap='*Single-word frequencies in original tweets from March 9th that contained one or more of the #UnDiaSinMujeres #UnDiaSinNosotras #ParoNacional #9M hash-tags.* Single word frequency analysis excluded the aforementioned hash-tags', fig.retina=1}
+
+### Clean text and create a new column: Preparing the corpus
+
+# Remove URLs from the tweet text
+data_9M$text_clean <- rm_twitter_url(data_9M$text)
+
+# replace tildes
+data_9M$text_clean <- stri_trans_general(data_9M$text_clean,"Latin-ASCII")
+
+# Change text to Lowercase
+data_9M$text_clean <- tolower(data_9M$text_clean)
+
+#Remove stopwords removeWords with stopwords("spanish") and custom words (hash-tags)
+data_9M$text_clean <- removeWords(data_9M$text_clean, 
+                               words = c(stopwords("spanish"),"undiasinnosotras","undiasinmujeres",
+                                          "paronacional","paronacionaldemujeres") )
+#Remove "extra" white spaces
+data_9M$text_clean <- stripWhitespace(data_9M$text_clean)
+
+#Remove left-side white space
+data_9M$text_clean<-str_trim(data_9M$text_clean, side = "left")
+
+## Get word frequencies: top 20
+word_freq<- data_9M %>% select(text_clean) %>%
+            mutate(id = row_number()) %>%
+            unnest_tokens(word, text_clean) %>%
+            count(word) %>%
+            arrange(desc(n)) %>%
+            top_n(20) #only top 20
+
+# Order of factors
+word_freq$word <- factor(word_freq$word, 
+                    levels = unique(word_freq$word)[order(word_freq$n, decreasing = FALSE)])
+#Plot
+plot_ly(word_freq,
+        x=~n, 
+        y=~word, 
+        type = "bar", 
+        marker = list(color = '#6515AC' ),
+        hoverinfo = "text",
+        text = ~paste("'",word,"'"," was in ", format(n,big.mark = ","), " tweets", sep="")) %>%
+  layout(title = list(text = "<b>Top 20 words tweeted during the national strike</b>", y = 1, x = 0),
+         yaxis = list(title = "", tickfont=list(size = 14)),
+         xaxis = list(title = "Number of original tweets"))
+
+```
+
+</center>
+<br>
+
+Analyzing [bi-grams](https://en.wikipedia.org/wiki/Bigram) helps visualize the frequency of the two consecutive words These add information to single word frequency trends.
+
+The most popular bi-grams in original tweets from March 9th were a combination of hash-tags. For example, *"niunamas"* and *"niunamenos"*, *"nosotrasparamos"* and *"9M"*.
+
+<br>
+<center>
+
+```{r ngram_freq, echo=FALSE, warning=FALSE, message=FALSE,  warning=FALSE, message=FALSE, fig.fullwidth = TRUE, include=T, fig.pos='center', out.extra='style="padding:5px;"', fig.cap="*Bi-gram frequencies in original tweets containing one or more of the #UnDiaSinMujeres #UnDiaSinNosotras #ParoNacional #9M hash-tags.* Bigram frequency analysis excluded the aforementioned hash-tags.", fig.retina=1}
+
+### Clean text
+# Remove URLs from the tweet text and view the output
+txt_clean <- rm_twitter_url(data_9M$text)
+
+# replace tildes
+txt_clean <- stri_trans_general(txt_clean,"Latin-ASCII")
+
+# Change text to Lowercase
+txt_clean <- tolower(txt_clean)
+
+#Remove stopwords removeWords with stopwords("spanish") and custom words
+txt_clean <- removeWords(txt_clean, words = c(stopwords("spanish"),"m",
+                                          "undiasinnosotras","undiasinmujeres",
+                                          "paronacional","paronacionaldemujeres") )
+#Remove excesive white spaces
+txt_clean <- stripWhitespace(txt_clean)
+
+#Remove left-side white space
+txt_clean<-str_trim(txt_clean, side = "left")
+
+#make data frame
+txt_clean<-as.data.frame(txt_clean)
+
+# get ngrams: get top 20
+ngrams_clean.df<-txt_clean %>%
+          mutate(document_id=1:nrow(.)) %>%
+          unnest_tokens(bigram, txt_clean, token = "ngrams", n=2) %>%
+          count(bigram,sort=TRUE) %>% 
+          filter(!is.na(bigram)) %>%
+          top_n(20)
+
+### plot word frequencies
+ngrams_clean.df$bigram <- factor(ngrams_clean.df$bigram, 
+                            levels = unique(ngrams_clean.df$bigram)[order(ngrams_clean.df$n, decreasing=F)])
+
+# Only words with frequency > 100
+plot_ly(ngrams_clean.df,
+        x=~n, 
+        y=~bigram, 
+        type = "bar", 
+        marker = list(color = '#6515AC' ),
+        hoverinfo = "text",
+        text = ~paste("'",bigram,"'"," was in ", n, " tweets", sep="")) %>%
+  layout(title = list(text = "<b>Top 20 bi-grams tweeted during the national strike</b>", y = 1, x = 0),
+         yaxis = list(title = "", tickfont=list(size = 14)),
+         xaxis = list(title = "Number of original tweets"))
+
+```
+
+</center>
+<br>
+
+### Word networks
+
+```{r ngram_assoc_no, echo=FALSE, warning=TRUE, message=TRUE,fig.fullwidth = TRUE, include=FALSE}
+
+#library(SnowballC) # para Stemming
+
+## Get bigrams
+March9_ngrams <- data_9M %>%
+              select(text) %>%
+              unnest_tokens(bigram, text, token = "ngrams", n=2) %>%
+              #tm_map(., stemDocument, language="spanish") %>%
+              count(bigram, sort=TRUE) 
+
+#split and clean bigrams
+stopwords_es<-stopwords(kind = "es")
+stopwords_es_filt<-stopwords_es[!stopwords_es %in% c("no","sin","una","nosotras","otras","otra","ella","nada",
+                                                  "más","algunas","contra","ellas","ustedes","ya","tuya","tuyas")]
+
+hashtags<-c("undiasinnosotras","undiasinmujeres","niunamenos","niunamas","8m","9m","marcha8m","8m2020",
+            "el9ningunasemueve",
+            "paronacional","paronacionaldemujeres","diainternacionaldelamujer","undíasinnosotras","undíasinmujeres",
+            "el9nadiesemueve")
+
+# Separate bigrams in columns, eliminate stopwords (custom), hash-tags, links and image links
+March9_ngrams_split<-March9_ngrams %>%
+                     separate(bigram, c("word1","word2"), sep=" ") %>%
+                     filter(!word1 %in% c("https","t.co",stopwords_es_filt,hashtags,"va","van"))%>%
+                     filter(!word2 %in% c("https","t.co",stopwords_es_filt,hashtags,"va","van"))
+               
+# Get counts of words that follow "no"
+no_bgramd <- March9_ngrams_split %>% 
+             filter(word1 == "no") %>%
+            top_n(20,n)
+
+### plot word frequencies
+no_bgramd$word2 <- factor(no_bgramd$word2, 
+                        levels = unique(no_bgramd$word2)[order(no_bgramd$n, decreasing=F)])
+
+# Only words with frequency
+plot_ly(no_bgramd,
+        x=~n, 
+        y=~word2, 
+        type = "bar", 
+        marker = list(color = '#6515AC' ),
+        hoverinfo = "text",
+        text = ~paste("'",word2,"'"," was preceded by 'no' ", n, " times", sep="")) %>%
+  layout(title = list(text = "<b>Top 20 words preceded by 'no' during 9 March</b>", y = 1, x = 0),
+         yaxis = list(title = "", tickfont=list(size = 14)),
+         xaxis = list(title = "Frequency"))
+
+```
+
+```{r ngram_assoc_mujeres, echo=FALSE, warning=TRUE, message=TRUE,fig.fullwidth = TRUE, include=FALSE}
+
+## Get bigrams for march 9
+March9_ngrams_mujeres <- data_9M %>%
+              select(text) %>%
+              unnest_tokens(bigram, text, token = "ngrams", n=2) %>%
+              count(bigram, sort=TRUE) 
+
+#split and clean bigrams
+stopwords_es<-stopwords(kind = "es")
+                              
+hashtags_b<-c("undiasinnosotras","undiasinmujeres","niunamenos","niunamas","8m","9m","marcha8m","8m2020",
+              "el9ningunasemueve",
+            "paronacional","paronacionaldemujeres","diainternacionaldelamujer","undíasinnosotras","undíasinmujeres",
+            "el9nadiesemueve")
+
+March9_ngrams_mujeres_split<-March9_ngrams_mujeres %>%
+                     separate(bigram, c("word1","word2"), sep=" ") %>%
+                     filter(!word1 %in% c("https","t.co",stopwords_es,hashtags_b))%>%
+                     filter(!word2 %in% c("https","t.co",stopwords_es,hashtags_b))
+
+# Get counts of words that follow "mujer(es)"
+mujer_bigram <- March9_ngrams_mujeres_split %>% 
+                filter(word1 %in% c("mujer","mujeres")) %>%
+                filter(word2 != "mujeres") %>%
+                top_n(10,wt = n)
+
+  
+### plot word frequencies
+mujer_bigram$word2 <- factor(mujer_bigram$word2, 
+                        levels = unique(mujer_bigram$word2)[order(mujer_bigram$n, decreasing=F)])
+
+# Only words with frequency
+plot_ly(mujer_bigram,
+        x=~n, 
+        y=~word2, 
+        type = "bar", 
+        marker = list(color = '#6515AC' ),
+        hoverinfo = "text",
+        text = ~paste("'",word2,"'"," was preceded by 'mujer(es)' ", n, " times", sep="")) %>%
+  layout(title = list(text = "<b>Top 10 words preceded by 'mujer(es)'</b>", y = 1, x = 0),
+         yaxis = list(title = "", tickfont=list(size = 14)),
+         xaxis = list(title = "Frequency"))
+
+```
+
+During the national strike, the words *"mujer* and *"mujeres"*, woman and women, were often preceded by words detonating frustration and anger, but also unity and support.
+
+The word network below shows the words most often associated with *"mujer* and *"mujeres"*. The arrow size is proportional to the times that word was associated with *"mujer* and *"mujeres"*.
+
+<br>
+<center>
+```{r ngram_mujeres_netword, echo=FALSE, warning=FALSE, message=FALSE, fig.fullwidth = TRUE, fig.pos='center', out.extra='style="padding:5px;"', fig.cap='*Word network analysis for *"mujer* and *"mujeres"*, woman and women, in original tweets from March 9th, 2020.*', fig.retina=1}
+
+library(visNetwork)
+
+tm_bdd <- data_9M %>%
+ select(text) %>%
+ unnest_tokens(bigram, text, token = "ngrams", n = 2) %>%
+ separate(bigram, c("from", "to"), sep = " ") %>%
+ filter(!from %in% c("https","t.co",stopwords_es,hashtags))%>%
+ filter(!to %in% c("https","t.co",stopwords_es,hashtags)) %>%
+ filter(from %in% c("mujer","mujeres")) %>%
+ count(from, to, sort = TRUE) %>%
+ rename(size = n) %>%
+ filter(size >= 10)
+
+uni_bdd <- data_9M %>%
+ select(text) %>%
+ unnest_tokens(output = word, input = text) %>%
+ filter(!word %in% c("https","t.co",stopwords_es,hashtags))%>%
+ count(word) %>%
+ rename(value = n)
+
+nodes_tm_bdd <- tibble(id = unique(c(tm_bdd$from, tm_bdd$to)),
+ label = unique(c(tm_bdd$from, tm_bdd$to))) %>%
+ left_join(uni_bdd, by = c(id = "word"))
+
+nodes_tm_bdd$size<-nodes_tm_bdd$value/10
+nodes_tm_bdd$title<-nodes_tm_bdd$label
+
+tm_bdd$width <- tm_bdd$size/8 # line width
+tm_bdd$arrows <- "middle" # arrows: 'from', 'to', or 'middle'
+
+# plot network
+visNetwork(nodes_tm_bdd, tm_bdd,
+           main = " ") %>%
+  visNodes(shape = "circle", 
+           color = list(background = "#c1a1dd", 
+                        border = "darkblue",
+                        highlight = "#bddda1", hover = "#bddda1"),
+           shadow = list(enabled = TRUE, size = 10) ) %>%
+  visEdges(color = list(
+                        highlight = "#bddda1", 
+                        hover = "#bddda1")) %>%
+  visOptions(highlightNearest = list(enabled = T, degree = 1, hover = T)) %>%
+  visLayout(randomSeed = 123)
+
+
+```
+
+</center>
+<br>
+
+### Sentiment analysis
+
+Sentiment analysis allows approximating the emotional content of text. In this case, the emotion in social media post. This analysis is conducted by linking words to dictionaries of words and sentiments.
+
+The [NRC library](http://saifmohammad.com/WebPages/NRC-Emotion-Lexicon.htm) was used to map scores of 10 sentiments: trust, fear, sadness, anger, surprise, disgust, joy, anticipation, negative, and positive.
+
+The graphs below maps the over sentiments in tweets during March 9th, the national strike day. The greater the *score* of a given sentiment, the greater the number of words associated with that sentiment. A single tweet can have valences for multiple sentiments.
+
+<br>
+<center>
+
+```{r sentiment_9M,  echo=FALSE, warning=FALSE, message=FALSE, fig.fullwidth = TRUE, include=T, fig.pos='center', out.extra='style="padding:5px;"', fig.cap='*Sentiment analysis of original tweets from March 9th, 2020, that contained one or more of the #UnDiaSinMujeres #UnDiaSinNosotras #ParoNacional #9M hash-tags.* Only tweets in Spanish were used in this analysis (n = 31,295). Sentiment scores are from the NRC library.', fig.retina=1}
+
+## Text cleaning involved:
+# remove htmls
+# acentos en espanol
+# remove punctiation
+# to lower case
+# remove stopwords
+# remove whitespace
+
+# Get NRC sentiment scores for the clean tweet text data from March 9th
+# 31,295 observations
+sa.value <- get_nrc_sentiment(data_9M$text_clean[data$lang == "es"], language = "spanish")
+
+# View the sentiment scores
+#head(sa.value, 10)
+
+# Calculate sum of sentiment scores
+score <- colSums(sa.value[,])
+
+# Convert the sum of scores to a data frame
+score <- data.frame(score)
+
+# Convert row names into 'sentiment' column and combine with sentiment scores
+score <- cbind(sentiment = row.names(score),  
+                   score, row.names = NULL)
+#print(score)
+
+# Plot the sentiment scores
+score$sentiment <- factor(score$sentiment, 
+                            levels = unique(score$sentiment)[order(score$score, decreasing=F)])
+
+plot_ly(score,
+        x=~score, 
+        y=~sentiment, 
+        type = "bar", 
+        marker = list(color = '#6515AC' ),
+        hoverinfo = "text",
+        text = ~paste("'",sentiment,"'", ' score of ', score,sep="")) %>%
+  layout(title = list(text = "<b>NRC sentiment analysis of original tweets during national strike</b>", y = 0.97, x = 0),
+         yaxis = list(title = "", tickfont=list(size = 14)),
+         xaxis = list(title = "Total score"))
+
+```
+
+<br>
+</center>
