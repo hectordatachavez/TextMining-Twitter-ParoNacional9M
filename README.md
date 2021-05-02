@@ -2,6 +2,8 @@
 
 This is part of a series of posts/repositories in which I explore the use of different tools relevant for my work as social-environmental impact research, ranging from visualizations to predictive modeling using \#TidyTuesday or other open datasets.
 
+:rainbow_flag:
+
 ## What is this about?
 
 This is a social media, text-mining project around the *"Paro Nacional"* (National Strike), an initiative of women in Mexico back in 2020 as protest against feminicides.
@@ -25,3 +27,5 @@ Paulina Villegas [article](https://www.nytimes.com/es/2020/03/10/espanol/mexico-
 The [text](https://www.cndh.org.mx/noticia/paro-nacional-de-mujeres-contra-la-violencia-la-mujer-y-los-feminicidios#:~:text=El%2006%20de%20marzo%20de,poblaci%C3%B3n%20femenina%20en%20las%20esferas) from María de la Luz Estrada, Coordinator of the National Citizen Observatory of Feminicides, and references therein.
 
 **Let's get started** :unicorn: **!**
+
+PD: you can preview the HTML output [here](https://rawcdn.githack.com/hectordatachavez/TextMining-Twitter-ParoNacional9M/32d46307a3ecffe8af2108eb636fd97ee4fd5a2c/Text-Mining---Paro-Nacional.html). (A link possible thanks to [raw.githack](https://raw.githack.com/).)
